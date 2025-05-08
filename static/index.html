@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #chat {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #message {
+            width: 80%;
+            padding: 5px;
+        }
+        button {
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Chat</h1>
+    <div id="chat"></div>
+    <div>
+        <input type="text" id="message" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const chatDiv = document.getElementById('chat');
+        const messageInput = document.getElementById('message');
+        let socket;
+
+        function appendMessage(message) {
+            const p = document.createElement('p');
+            p.textContent = message;
+            chatDiv.appendChild(p);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        function connect() {
+            // Use the current host and port, but change the protocol to ws:// 
+            const wsURL = 'ws://' + window.location.host + '/ws';
+            socket = new WebSocket(wsURL);
+
+            socket.onopen = function() {
+                appendMessage('Connected to server');
+            };
+
+            socket.onmessage = function(event) {
+                appendMessage('Received: ' + event.data);
+            };
+
+            socket.onclose = function() {
+                appendMessage('Disconnected from server');
+                // Try to reconnect after a few seconds
+                setTimeout(connect, 3000);
+            };
+
+            socket.onerror = function(error) {
+                appendMessage('Error: ' + error);
+            };
+        }
+
+        function sendMessage() {
+            const message = messageInput.value;
+            if (message && socket.readyState === WebSocket.OPEN) {
+                socket.send(message);
+                appendMessage('Sent: ' + message);
+                messageInput.value = '';
+            }
+        }
+
+        // Allow Enter key to send messages
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Connect when the page loads
+        connect();
+    </script>
+</body>
+</html> 
